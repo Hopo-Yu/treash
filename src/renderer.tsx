@@ -26,6 +26,15 @@
  * ```
  */
 
-import './index.css';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';  // Create this file to add global styles
+import App from './App';
 
-console.log('👋 This message is being logged by "renderer.js", included via webpack');
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+console.log('renderer.tsx is loaded');

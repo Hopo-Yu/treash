@@ -8,6 +8,11 @@ rules.push({
   use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
 });
 
+rules.push({
+    test: /\.geojson$/,
+    use: 'json-loader',
+})
+
 export const rendererConfig: Configuration = {
   module: {
     rules,
