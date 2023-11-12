@@ -1,4 +1,3 @@
-// FileExplorer.tsx
 import React, { useState, useEffect } from 'react';
 
 interface FileItem {
@@ -21,11 +20,9 @@ const FileExplorer: React.FC<{ selectedFolderPath: string | null }> = ({ selecte
       }));
 
       if (parent) {
-        // Update the parent node with children
         parent.children = files;
         setFileTree([...fileTree]);
       } else {
-        // Set the root level files
         setFileTree(files);
       }
     } catch (error) {
@@ -41,19 +38,24 @@ const FileExplorer: React.FC<{ selectedFolderPath: string | null }> = ({ selecte
 
   const toggleDirectory = async (file: FileItem) => {
     if (file.children && file.children.length > 0) {
-      // Collapse the directory
       file.children = [];
     } else {
-      // Expand the directory
       await fetchFiles(file.path, file);
     }
     setFileTree([...fileTree]);
   };
 
+  const handleFileOpen = (file: FileItem) => {
+    if (!file.isDirectory) {
+      window.electronAPI.openFile(file.path);
+    }
+  };
+  
+
   const renderFileTree = (files: FileItem[]) => {
     return files.map(file => (
       <div key={file.path}>
-        <div onClick={() => file.isDirectory && toggleDirectory(file)}>
+        <div onClick={() => file.isDirectory ? toggleDirectory(file) : handleFileOpen(file)}>
           {file.name} {file.isDirectory ? '[Dir]' : '[File]'}
         </div>
         {file.isDirectory && file.children && <div style={{ paddingLeft: '20px' }}>{renderFileTree(file.children)}</div>}
