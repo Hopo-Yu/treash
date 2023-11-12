@@ -1,85 +1,51 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 
-let db: any;
+async function initializeDatabase() {
+    const db = await open({
+        filename: './database.sqlite',
+        driver: sqlite3.Database
+    });
 
-export const initializeDatabase = async () => {
-  db = await open({
-    filename: './history-app.db',
-    driver: sqlite3.Database
-  });
+    // Create a table if it doesn't exist
+    await db.run(`CREATE TABLE IF NOT EXISTS nodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        metadata TEXT
+    )`);
 
-  // Create tables if they don't exist
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Themes (
-      theme_id INTEGER PRIMARY KEY,
-      theme_name TEXT
-    )
-  `);
+    return db;
+}
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS TimePrecisions (
-      precision_id INTEGER PRIMARY KEY,
-      precision_value INTEGER,
-      theme_id INTEGER,
-      FOREIGN KEY(theme_id) REFERENCES Themes(theme_id)
-    )
-  `);
+async function createNode(db: any, name: string, metadata: string) {
+    const stmt = await db.prepare('INSERT INTO nodes (name, metadata) VALUES (?, ?)');
+    const result = await stmt.run(name, metadata);
+    return result.lastID;  // Returns the ID of the newly created node
+}
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS TimePeriods (
-      period_id INTEGER PRIMARY KEY,
-      period_value TEXT,
-      precision_id INTEGER,
-      FOREIGN KEY(precision_id) REFERENCES TimePrecisions(precision_id)
-    )
-  `);
+async function getAllNodes(db: any) {
+    return await db.all('SELECT * FROM nodes');
+}
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Locations (
-      location_id INTEGER PRIMARY KEY,
-      location_name TEXT,
-      period_id INTEGER,
-      FOREIGN KEY(period_id) REFERENCES TimePeriods(period_id)
-    )
-  `);
+async function getNodeById(db: any, id: number) {
+    return await db.get('SELECT * FROM nodes WHERE id = ?', [id]);
+}
 
-  await db.run(`
-    CREATE TABLE IF NOT EXISTS Events (
-      event_id INTEGER PRIMARY KEY,
-      event_name TEXT,
-      description TEXT,
-      theme_id INTEGER,
-      precision_id INTEGER,
-      period_id INTEGER,
-      location_id INTEGER,
-      FOREIGN KEY(theme_id) REFERENCES Themes(theme_id),
-      FOREIGN KEY(precision_id) REFERENCES TimePrecisions(precision_id),
-      FOREIGN KEY(period_id) REFERENCES TimePeriods(period_id),
-      FOREIGN KEY(location_id) REFERENCES Locations(location_id)
-    )
-  `);
+async function updateNode(db: any, id: number, name: string, metadata: string) {
+    const stmt = await db.prepare('UPDATE nodes SET name = ?, metadata = ? WHERE id = ?');
+    await stmt.run(name, metadata, id);
+}
+
+async function deleteNode(db: any, id: number) {
+    const stmt = await db.prepare('DELETE FROM nodes WHERE id = ?');
+    await stmt.run(id);
+}
+
+export {
+    initializeDatabase,
+    createNode,
+    getAllNodes,
+    getNodeById,
+    updateNode,
+    deleteNode
 };
-
-// CRUD Operations
-
-// Themes
-export const insertTheme = async (themeName: string) => {
-  await db.run('INSERT INTO Themes (theme_name) VALUES (?)', themeName);
-};
-
-export const getThemes = async () => {
-  return await db.all('SELECT * FROM Themes');
-};
-
-export const updateTheme = async (themeId: number, newThemeName: string) => {
-  await db.run('UPDATE Themes SET theme_name = ? WHERE theme_id = ?', [newThemeName, themeId]);
-};
-
-export const deleteTheme = async (themeId: number) => {
-  await db.run('DELETE FROM Themes WHERE theme_id = ?', themeId);
-};
-
-// ... Similarly, create functions for other tables (TimePrecisions, TimePeriods, Locations, Events)
-
-initializeDatabase();

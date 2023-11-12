@@ -21,4 +21,9 @@ export const rendererConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],
   },
+  externals: {
+    fs: 'commonjs fs',
+    path: 'commonjs path',
+    // You can add other Node core modules here if needed
+  }
 };
