@@ -1,21 +1,25 @@
+// App.tsx
 import React, { useState } from 'react';
-import SideBar from './components/SideBar';
-import MainArea from './components/MainArea';
-import TopBar from './components/TopBar';
 import './index.css';
-
+import Sidebar from './components/layout/Sidebar';
+import TabArea from './components/layout/TabArea';
 
 function App() {
-  console.log('App.tsx is loaded');
-  const [selectedFolderPath, setSelectedFolderPath] = useState<string | null>(null);
+  const [isSplitView, setIsSplitView] = useState(false);
+
+  const toggleSplitView = () => {
+    setIsSplitView(!isSplitView);
+  };
+
   return (
-    <div className="App">
-      <TopBar onFolderSelect={setSelectedFolderPath} />
-      <div className="content-container">
-        <SideBar selectedFolderPath={selectedFolderPath} />
-        <MainArea />
+    <div className="App" style={{ display: 'flex', height: '100vh' }}> {/* Flex container */}
+      <Sidebar toggleSplitView={toggleSplitView} />
+      <div className="content-container" style={{ flex: 1 }}> {/* Flex item */}
+        <TabArea isSplitView={isSplitView} />
       </div>
     </div>
   );
 }
+
 export default App;
+
