@@ -1,0 +1,41 @@
+name: Upload to Supabase
+
+on:
+  workflow_run:
+    workflows: ["Build Application"]
+    types:
+      - completed
+
+jobs:
+  upload-to-supabase:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: app-${{ matrix.os }}
+
+      - name: Upload to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          case ${{ matrix.os }} in
+            "ubuntu-latest")
+              extension="AppImage"
+              ;;
+            "windows-latest")
+              extension="exe"
+              ;;
+            "macos-latest")
+              extension="dmg"
+              ;;
+          esac
+          curl -X POST "${SUPABASE_URL}/storage/v1/object/public/app-downloads/your-app-${{ matrix.os }}.$extension" \
+          -H "Authorization: Bearer $SUPABASE_KEY" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary "@/path/to/your/output/file/your-app.$extension"

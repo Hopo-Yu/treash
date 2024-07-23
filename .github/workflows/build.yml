@@ -1,0 +1,42 @@
+name: Build Application
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            extension: AppImage
+          - os: windows-latest
+            extension: exe
+          - os: macos-latest
+            extension: dmg
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build application
+        run: npm run build:${{ matrix.os }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-${{ matrix.os }}
+          path: release/build/*
