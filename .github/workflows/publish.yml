@@ -15,13 +15,13 @@ jobs:
         include:
           - os: ubuntu-latest
             build_command: build:linux
-            extension: AppImage
+            file_pattern: "release/build/linux-unpacked/**/*"
           - os: windows-latest
             build_command: build:win
-            extension: exe
+            file_pattern: "release/build/win-unpacked/Treash.exe"
           - os: macos-latest
             build_command: build:mac
-            extension: dmg
+            file_pattern: "release/build/*.dmg"
 
     steps:
     - name: Checkout code
@@ -46,13 +46,15 @@ jobs:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       run: |
-        APP_FILE=$(ls release/build/**/*.${{ matrix.extension }} | head -n 1)
-        if [ -z "$APP_FILE" ]; then
-          echo "No .${{ matrix.extension }} file found in build directory"
+        APP_FILES=$(ls ${{ matrix.file_pattern }} 2>/dev/null || echo "")
+        if [ -z "$APP_FILES" ]; then
+          echo "No files found matching pattern: ${{ matrix.file_pattern }}"
           exit 1
         fi
-        echo "Uploading $APP_FILE to Supabase"
-        curl -X POST "${SUPABASE_URL}/storage/v1/object/app-downloads/${{ matrix.os }}/$(basename $APP_FILE)" \
-          -H "Authorization: Bearer $SUPABASE_KEY" \
-          -H "Content-Type: application/octet-stream" \
-          --data-binary "@$APP_FILE"
+        for APP_FILE in $APP_FILES; do
+          echo "Uploading $APP_FILE to Supabase"
+          curl -X POST "${SUPABASE_URL}/storage/v1/object/app-downloads/${{ matrix.os }}/$(basename $APP_FILE)" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$APP_FILE"
+        done
