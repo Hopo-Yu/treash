@@ -14,10 +14,13 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
+            build_command: build:linux
             extension: AppImage
           - os: windows-latest
+            build_command: build:win
             extension: exe
           - os: macos-latest
+            build_command: build:mac
             extension: dmg
 
     steps:
@@ -33,10 +36,10 @@ jobs:
         run: npm install
 
       - name: Build application
-        run: npm run build:${{ matrix.os }}
+        run: npm run ${{ matrix.build_command }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: app-${{ matrix.os }}
-          path: release/build/*
+          path: release/build/**/*.${{ matrix.extension }}
