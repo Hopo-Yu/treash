@@ -1,0 +1,58 @@
+name: Build and Upload to Supabase
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-upload:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            build_command: build:linux
+            extension: AppImage
+          - os: windows-latest
+            build_command: build:win
+            extension: exe
+          - os: macos-latest
+            build_command: build:mac
+            extension: dmg
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build application
+      run: npm run ${{ matrix.build_command }}
+
+    - name: List build directory
+      run: ls -R release/build
+
+    - name: Upload to Supabase
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: |
+        APP_FILE=$(ls release/build/**/*.${{ matrix.extension }} | head -n 1)
+        if [ -z "$APP_FILE" ]; then
+          echo "No .${{ matrix.extension }} file found in build directory"
+          exit 1
+        fi
+        echo "Uploading $APP_FILE to Supabase"
+        curl -X POST "${SUPABASE_URL}/storage/v1/object/app-downloads/${{ matrix.os }}/$(basename $APP_FILE)" \
+          -H "Authorization: Bearer $SUPABASE_KEY" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary "@$APP_FILE"
