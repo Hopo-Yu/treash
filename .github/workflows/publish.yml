@@ -6,7 +6,24 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  build-and-upload:
+    needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,12 +32,15 @@ jobs:
           - os: ubuntu-latest
             build_command: build:linux
             artifact_path: release/build/*.AppImage
+            asset_name: Treash-linux.AppImage
           - os: windows-latest
             build_command: build:win
             artifact_path: release/build/*.exe
+            asset_name: Treash-win.exe
           - os: macos-latest
             build_command: build:mac
             artifact_path: release/build/*.dmg
+            asset_name: Treash-mac.dmg
 
     steps:
       - name: Checkout code
@@ -45,22 +65,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
           asset_path: ${{ matrix.artifact_path }}
-          asset_name: Treash-${{ matrix.os }}${{ endsWith(matrix.artifact_path, '.exe') && '.exe' || endsWith(matrix.artifact_path, '.dmg') && '.dmg' || '.AppImage' }}
+          asset_name: ${{ matrix.asset_name }}
           asset_content_type: application/octet-stream
-
-  create-release:
-    runs-on: ubuntu-latest
-    needs: build-and-release
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
