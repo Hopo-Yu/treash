@@ -162,6 +162,11 @@
       "node_modules",
       "package.json"
     ],
+    "publish": [{
+      "provider": "github",
+      "owner": "Hopo-Yu",
+      "repo": "treash"
+    }],
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
       "target": {
