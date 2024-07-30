@@ -1,13 +1,12 @@
-name: Build and Upload to Supabase
+name: Build and Release on GitHub
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    tags:
+      - 'v*'
 
 jobs:
-  build-and-upload:
+  build-and-release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,46 +14,53 @@ jobs:
         include:
           - os: ubuntu-latest
             build_command: build:linux
-            file_pattern: "release/build/linux-unpacked/**/*"
+            artifact_path: release/build/*.AppImage
           - os: windows-latest
             build_command: build:win
-            file_pattern: "release/build/win-unpacked/Treash.exe"
+            artifact_path: release/build/*.exe
           - os: macos-latest
             build_command: build:mac
-            file_pattern: "release/build/*.dmg"
+            artifact_path: release/build/*.dmg
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Build application
-      run: npm run ${{ matrix.build_command }}
+      - name: Build application
+        run: npm run ${{ matrix.build_command }}
 
-    - name: List build directory
-      run: ls -R release/build
+      - name: List build directory
+        run: ls -R release/build
 
-    - name: Upload to Supabase
-      env:
-        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      run: |
-        APP_FILES=$(ls ${{ matrix.file_pattern }} 2>/dev/null || echo "")
-        if [ -z "$APP_FILES" ]; then
-          echo "No files found matching pattern: ${{ matrix.file_pattern }}"
-          exit 1
-        fi
-        for APP_FILE in $APP_FILES; do
-          echo "Uploading $APP_FILE to Supabase"
-          curl -X POST "${SUPABASE_URL}/storage/v1/object/app-downloads/${{ matrix.os }}/$(basename $APP_FILE)" \
-            -H "Authorization: Bearer $SUPABASE_KEY" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary "@$APP_FILE"
-        done
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ matrix.artifact_path }}
+          asset_name: Treash-${{ matrix.os }}${{ endsWith(matrix.artifact_path, '.exe') && '.exe' || endsWith(matrix.artifact_path, '.dmg') && '.dmg' || '.AppImage' }}
+          asset_content_type: application/octet-stream
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: build-and-release
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
