@@ -16,7 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Create Release
         id: create_release
         env:
@@ -40,32 +39,40 @@ jobs:
             asset_name: Treash-linux.AppImage
           - os: windows-latest
             build_command: build:win
-            artifact_path: release/build/*.exe
+            artifact_path: release\build
             asset_name: Treash-win.exe
           - os: macos-latest
             build_command: build:mac
             artifact_path: release/build/*.dmg
             asset_name: Treash-mac.dmg
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-
       - name: Install dependencies
         run: npm install
-
       - name: Build application
         run: npm run ${{ matrix.build_command }}
-
       - name: List build directory
         run: ls -R release/build
-
-      - name: Upload Release Asset
+      - name: Upload Release Asset (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem -Path "${{ matrix.artifact_path }}" -Filter "*.exe" | Select-Object -First 1
+          if ($file) {
+            gh release upload ${{ github.ref_name }} $file.FullName --clobber
+          } else {
+            Write-Error "No .exe file found in ${{ matrix.artifact_path }}"
+            exit 1
+          }
+      - name: Upload Release Asset (Non-Windows)
+        if: matrix.os != 'windows-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
