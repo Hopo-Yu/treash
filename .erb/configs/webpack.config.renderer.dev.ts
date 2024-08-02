@@ -63,25 +63,39 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.s?(c|a)ss$/,
+        test: /\.css$/,
         use: [
           'style-loader',
           {
             loader: 'css-loader',
             options: {
-              modules: true,
-              sourceMap: true,
               importLoaders: 1,
+              modules: {
+                auto: true,
+                localIdentName: '[name]__[local]--[hash:base64:5]',
+              },
             },
           },
-          'sass-loader',
+          'postcss-loader',
         ],
-        include: /\.module\.s?(c|a)ss$/,
       },
       {
-        test: /\.s?css$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
-        exclude: /\.module\.s?(c|a)ss$/,
+        test: /\.s[ac]ss$/i,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              importLoaders: 1,
+              modules: {
+                auto: true,
+                localIdentName: '[name]__[local]--[hash:base64:5]',
+              },
+            },
+          },
+          'postcss-loader',
+          'sass-loader',
+        ],
       },
       // Fonts
       {

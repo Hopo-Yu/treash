@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "A desktop application for knowledge management and visualization.",
   "license": "UNLICENSED",
-  "main": "./dist/main/main.js",
+  "main": "./src/main/main.ts",
   "author": {
     "name": "Hopo Yu",
     "email": "hopoyu01@gmail.com"
@@ -24,7 +24,7 @@
     "package:win": "npm run package -- --win",
     "package:linux": "npm run package -- --linux",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
-    "start": "ts-node ./.erb/scripts/check-port-in-use.js && npm run start:renderer",
+    "start": "ts-node ./.erb/scripts/check-port-in-use.js && npm run build:main && npm run start:renderer",
     "start:main": "cross-env NODE_ENV=development electronmon -r ts-node/register/transpile-only .",
     "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
@@ -60,7 +60,8 @@
     ],
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
-      "\\.(css|less|sass|scss)$": "identity-obj-proxy"
+      "\\.(css|less|sass|scss)$": "identity-obj-proxy",
+      "^@/(.*)$": "<rootDir>/src/$1"
     },
     "setupFiles": [
       "./.erb/scripts/check-build-exists.ts"
@@ -78,12 +79,17 @@
     }
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.8",
     "electron-updater": "^6.1.4",
+    "lucide-react": "^0.418.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.16.0"
+    "react-router-dom": "^6.16.0",
+    "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {
     "@electron/notarize": "^2.1.0",
@@ -102,6 +108,7 @@
     "@types/webpack-bundle-analyzer": "^4.6.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
+    "autoprefixer": "^10.4.19",
     "browserslist-config-erb": "^0.0.3",
     "chalk": "^4.1.2",
     "concurrently": "^8.2.1",
@@ -132,6 +139,8 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "mini-css-extract-plugin": "^2.7.6",
+    "postcss": "^8.4.40",
+    "postcss-loader": "^8.1.1",
     "prettier": "^3.0.3",
     "react-refresh": "^0.14.0",
     "react-test-renderer": "^18.2.0",
@@ -139,6 +148,7 @@
     "sass": "^1.67.0",
     "sass-loader": "^13.3.2",
     "style-loader": "^3.3.3",
+    "tailwindcss": "^3.4.7",
     "terser-webpack-plugin": "^5.3.9",
     "ts-jest": "^29.1.1",
     "ts-loader": "^9.4.4",
@@ -162,11 +172,13 @@
       "node_modules",
       "package.json"
     ],
-    "publish": [{
-      "provider": "github",
-      "owner": "Hopo-Yu",
-      "repo": "treash"
-    }],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Hopo-Yu",
+        "repo": "treash"
+      }
+    ],
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
       "target": {

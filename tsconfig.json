@@ -13,7 +13,10 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "outDir": "./release/app/dist",
-    "baseUrl": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["test", "release/build", "release/app/dist", ".erb/dll"]
